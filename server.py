@@ -26,7 +26,7 @@ def weather_endpoint(city: str) -> Response:
 
     except WeatherError as e:
         return Response(
-            f"Even meteorologists are wrong sometimes: {e}\n",
+            f"Even meteorologists are wrong sometimes. {e}\n",
             status=404,
             mimetype="text/plain; charset=utf-8",
         )

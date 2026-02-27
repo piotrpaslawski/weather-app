@@ -1,4 +1,5 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -35,7 +36,7 @@ def get_coordinates(city_name: str) -> tuple[float, float, str]:
             GEOCODING_URL,
             params={
                 "name": city_name,
-                "count": 1,
+                "count": 10,
                 "language": "pl",
             },
             timeout=10,
@@ -54,7 +55,11 @@ def get_coordinates(city_name: str) -> tuple[float, float, str]:
     if not results:
         raise WeatherError(f"City not found: '{city_name}'.")
 
-    city = results[0]
+    city_name_lower = city_name.lower()
+    city = next(
+        (r for r in results if r["name"].lower() == city_name_lower),
+        results[0],
+    )
     display_name = city["name"]
     if country := city.get("country"):
         display_name += f", {country}"
@@ -142,7 +147,12 @@ def format_weather(city_display_name: str, data: dict) -> str:
         return f"+-{inner}-+"
 
     # --- Header ---
+    timezone_str = data.get("timezone", "UTC")
+    local_time = datetime.now(tz=ZoneInfo(timezone_str))
+    local_time_str = local_time.strftime("%H:%M:%S - %d.%m.%Y")
+
     lines.append(f"  Weather for: {city_display_name}")
+    lines.append(f"  {local_time_str}")
     lines.append("")
 
     # --- Next 24 hours ---
@@ -163,7 +173,13 @@ def format_weather(city_display_name: str, data: dict) -> str:
 
     hourly = data["hourly"]
 
-    for i in range(24):
+    current_hour_str = local_time.strftime("%Y-%m-%dT%H:00")
+    try:
+        start_index = hourly["time"].index(current_hour_str)
+    except ValueError:
+        start_index = 0
+
+    for i in range(start_index, start_index + 24):
         time_str = hourly["time"][i][11:]  # leaving just hour and minute
         temp = hourly["temperature_2m"][i]
         rain = hourly["precipitation_probability"][i]

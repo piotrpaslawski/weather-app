@@ -25,7 +25,7 @@ def main():
 
     except WeatherError as e:
         print(
-            f"Look out the window and check the weather, because an error occurred: {e}"
+            f"Look out the window and check the weather, because an error occurred. {e}"
         )
         sys.exit(1)
 
